@@ -1,0 +1,65 @@
+services:
+  otel:
+    image: otel/opentelemetry-collector:latest
+    container_name: node-observability-otel
+    ports:
+      - "4317:4317" # grpc
+      - "4318:4318" # http
+      - "8888:8888" # prometheus metrics exposed by the collector
+      - "8889:8889" # prometheus exporter metrics
+      - "55678:55678" # opencensus
+    volumes:
+      - ./docker/otel/config.yaml:/etc/otel/config.yaml
+    command: --config=/etc/otel/config.yaml
+    networks:
+      - default
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: node-observability-prometheus
+    volumes:
+      - ./docker/prometheus/config.yaml:/etc/prometheus/config.yaml
+    command: --config.file=/etc/prometheus/config.yaml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel
+    networks:
+      - default
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: node-observability-grafana
+    ports:
+      - "3001:3001"
+    environment:
+      - GF_SERVER_HTTP_PORT=3001
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/
+    networks:
+      - default
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    container_name: node-observability-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - prometheus
+    networks:
+      - default
+
+networks:
+  default:
+    name: node-observability
+    external: false
+
+volumes:
+  grafana-storage:
+    name: node-observability-grafana
+    external: false

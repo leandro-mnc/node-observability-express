@@ -1,0 +1,32 @@
+# Ignore files and directories specific to the project
+
+# Compile output
+node_modules/
+dist/
+
+# IDE-specific files
+.idea/
+.vs/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build artifacts
+target/
+build/
+
+# Log files
+*.log
+*.js.map
+
+# Cache files
+.cache/
+node_modules/.cache/
+
+# Package.json and dependencies
+npm-debug.log*
+
+# Other files and directories
+.env
+.DS_Store
