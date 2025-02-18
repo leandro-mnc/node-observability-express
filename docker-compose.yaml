@@ -40,6 +40,14 @@ services:
     networks:
       - default
 
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: node-observability-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - default
+
   app:
     build:
       context: .

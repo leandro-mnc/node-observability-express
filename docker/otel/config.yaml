@@ -16,6 +16,10 @@ exporters:
       insecure: true
   prometheus:
     endpoint: 0.0.0.0:8889
+  zipkin/tlsnoverify:
+    endpoint: "http://zipkin:9411/api/v2/spans"
+    tls:
+      insecure_skip_verify: true
 
 extensions:
   health_check:
@@ -28,7 +32,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp]
+      exporters: [otlp, zipkin/tlsnoverify]
     metrics:
       receivers: [otlp]
       processors: [batch]

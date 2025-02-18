@@ -1,4 +1,4 @@
-const { metrics } = require('@opentelemetry/api');
+const { metrics} = require('@opentelemetry/api');
 
 const meter = metrics.getMeter('node-observability-app');
 
@@ -11,6 +11,7 @@ eventEmitter.on('metrics.counter', (name, counter, params = {}) => {
 });
 
 module.exports = {
+    meter,
     metricsCounter: (name, counter, params = {}) => {
         eventEmitter.emit('metrics.counter', name, counter, params);
     }
