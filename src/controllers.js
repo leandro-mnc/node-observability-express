@@ -1,6 +1,7 @@
 const {metricsCounter} = require("./events");
 const {SpanStatusCode, context} = require("@opentelemetry/api");
 const {startSpan, tracer} = require("./trace");
+const {loggerEmit} = require('./logger');
 
 let express = {};
 
@@ -13,26 +14,29 @@ const middleware = () => {
 
 const home = () => {
     express.get('/', (req, res) => {
-        const { span} = startSpan('home', req);
+        const {span} = startSpan('home', req);
 
         try {
             const response = {
                 message: 'Hello World!'
             };
 
+            res.send(response);
+
             span.addEvent('response', response);
 
-            res.send(response);
+            loggerEmit('home', {body: response});
 
             span.setAttribute('http.status_code', 200);
             span.setStatus({code: SpanStatusCode.OK});
         } catch (error) {
-            span.recordException(error);
-
             res.send({message: 'The request can not be processed!'});
 
+            span.recordException(error);
             span.setAttribute('http.status_code', 403);
             span.setStatus({code: SpanStatusCode.ERROR});
+
+            loggerEmit('home', {body: user});
         }
     });
 };
@@ -63,12 +67,16 @@ const user = () => {
 
             res.send({data: user});
 
+            loggerEmit('user', {body: user});
+
             span.setAttribute('http.status_code', 200);
             span.setStatus({code: SpanStatusCode.OK});
         } catch (error) {
             span.recordException(error);
             span.setAttribute('http.status_code', 403);
             span.setStatus({code: SpanStatusCode.ERROR});
+
+            loggerEmit('user', {body: error});
         }
     });
 }

@@ -1,6 +1,6 @@
 services:
   otel:
-    image: otel/opentelemetry-collector:latest
+    image: otel/opentelemetry-collector-contrib:latest
     container_name: node-observability-otel
     ports:
       - "4317:4317" # grpc
@@ -48,6 +48,64 @@ services:
     networks:
       - default
 
+  opensearch-node1:
+    image: opensearchproject/opensearch:1.3.20
+    container_name: node-observability-op-node1
+    environment:
+      - cluster.name=node-observability-cluster
+      - node.name=opensearch-node1
+      - discovery-type=single-node
+      - discovery.seed_hosts=opensearch-node1
+      - cluster.initial_master_nodes=opensearch-node1
+      - http.host=0.0.0.0
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch:/usr/share/opensearch/data
+      - ./docker/opensearch/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    networks:
+      - default
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:1.3.0
+    container_name: node-observability-op-dashboards
+    volumes:
+      - ./docker/opensearch/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+    ports:
+      - "5601:5601"
+    expose:
+      - "5601"
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch-node1:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: true
+    depends_on:
+      - opensearch-node1
+    networks:
+      - default
+
+  fluent-bit:
+    image: fluent/fluent-bit
+    container_name: node-observability-fluent-bit
+    ports:
+      - "24224:24224"
+    volumes:
+      - ./docker/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+    networks:
+      - default
+
   app:
     build:
       context: .
@@ -70,4 +128,7 @@ networks:
 volumes:
   grafana-storage:
     name: node-observability-grafana
+    external: false
+  opensearch:
+    name: node-observability-opensearch
     external: false
